@@ -2,16 +2,14 @@ FROM blacknred0/mediacomsmsquota
 
 MAINTAINER Irving Duran <irving.duran@gmail.com>
 
-RUN apt-get update && apt-get install -y
+RUN apt update && apt upgrade -y
 RUN mkdir -p /src/email2sms
-COPY main.py /src/email2sms
-COPY chromedriver_linux64 /src/email2sms
-ENTRYPOINT ["python", "/src/email2sms/main.py", "chromedriver_linux64"]
+#COPY main.py main_gather.py localf.py chromedriver_linux64 /src/email2sms/
+ENTRYPOINT ["python"]
 #CMD ["python", "/src/email2sms/main.py", "chromedriver_linux64"]
 VOLUME ["/src/email2sms"]
 
 #fix chrome issues with xvfb source -> https://github.com/kfatehi/docker-chrome-xvfb/blob/master/Dockerfile
-
 ENV DISPLAY :99
 
 # Install Xvfb init script
