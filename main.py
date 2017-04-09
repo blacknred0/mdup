@@ -31,8 +31,59 @@ if fp.is_file():
                                                   .tail(1).to_string(header=False, index=False),
                                                   '%m/%d/%Y %H:%M')
     if last_dt_datesnap >= dt_datesnap:
-        print('No need to run, since latest version exist on the log file.')
+        print('No need to dump new data since latest version exist on the log file.',
+              '\nWill still continue and run prediction.')
         #localf.kill(dvr, disp) #try to started services
+        ###############################################################################
+        #    Gather date information to align with reporting month
+        ###############################################################################
+        today = datetime.date.today() #return today's date as a string
+        #source http://stackoverflow.com/questions/37396329/finding-first-day-of-the-month-in-python
+        if today.day > 11:
+            today += datetime.timedelta(1)
+            startdate = str(today.replace(day=11)) #return 11th of the previous month
+        else:
+            #source http://stackoverflow.com/questions/36155332/how-to-get-the-first-day-and-last-day-of-current-month-in-python
+            startdate = str(datetime.date(today.year, today.month - 1, 11)) #return 11th of the previous month
+        enddate = localf.add_months(datetime.datetime(*[int(item) for item in startdate.split('-')]), 1).strftime("%Y-%m-%d")
+        ###############################################################################
+        #    Build prediction model using linear regression
+        ###############################################################################
+        df = pd.read_csv('isp.log')
+        df.replace(r'( \d:\d\d)|( \d\d:\d\d)', '', inplace=True, regex=True) #remove time
+        df['datesnap'] = pd.to_datetime(df['datesnap'], format="%m/%d/%Y") #fix date issue
+        df = df[df['datesnap'] > startdate] #select records on the current month
+        X = df.as_matrix(columns=['daysleft']) # current days
+        y = df.as_matrix(columns=['dataused']) # data usage to predict
+        model = LinearRegression()
+        model.fit(X, y)
+        # create and sort descending order for days left
+        # then predict data usage based on days left on the month
+        X_predict = np.arange(np.min(X)); X_predict = X_predict[::-1]
+        X_predict = X_predict[:, np.newaxis] #transpose
+        y_predict = model.predict(X_predict) #predict data usage
+        #fc = np.concatenate((X_predict, y_predict), axis=1) #forecast
+        # calculate the over usage based on 50GB blocks at $10 a piece.
+        f_msg = str('\n[Mediacom] With ' + str(np.min(X)) + ' days left, ' +
+                    'your current ' + dataused + 'GB and projected ' +
+                    str(np.max(np.round(y_predict, decimals=1))) + 'GB data usage.')
+        b_msg = str(' That is ~' + str(np.round(np.max(y_predict)-400, decimals=0).astype(int)) +
+                    'GB or ~$' + str(localf.round10(((np.max(y_predict)-400)/50) * 10)) +
+                    ' over.')
+        # if over usage data prediction is less than zero,
+        # don't append prediction over usage
+        dta_msg = str(f_msg +
+                      '' if np.round(np.max(y_predict)-400, decimals=0).astype(int) < 0
+                      else f_msg + b_msg)
+        ###############################################################################
+        #    Email the prediction results
+        ###############################################################################
+        username = conf.iloc[2][1]
+        password = conf.iloc[3][1]
+        to = sys.argv[1].split(sep=',')
+        localf.email_msg(username, password, to, dta_msg)
+        #localf.kill(dvr, disp) #try to started services
+        print('DONE processing the whole thing.')
         sys.exit(0)
     else:
         f = open('isp.log', mode='a')
