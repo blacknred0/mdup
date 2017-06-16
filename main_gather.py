@@ -6,7 +6,7 @@ Created on Feb 28, 2017
 @summary: Collect and send via SMS your current month data usage.
 '''
 
-import os, datetime, sys, localf
+import os, datetime, sys, mdup
 import pandas as pd
 from pathlib import Path
 
@@ -14,7 +14,7 @@ prog_path = os.path.dirname(os.path.realpath(sys.argv[0])) #get python file path
 os.chdir(prog_path) #change working directory
 conf = pd.read_table('conf', sep='=', header=None) #store config file
 
-used, left, daysleft, dataused, datesnap = localf.get_data(prog_path, conf)
+used, left, daysleft, dataused, datesnap = mdup.get_data(prog_path, conf)
 comb = used + ',' + left + ',' + daysleft + ',' + dataused + ',' + datesnap + '\n'
 
 fp = Path('isp.log')
@@ -30,14 +30,14 @@ if fp.is_file():
                                                   '%m/%d/%Y %H:%M')
     if last_dt_datesnap >= dt_datesnap:
         print('No need to run, since latest version exist on the log file.')
-        #localf.kill(dvr, disp) #try to started services
+        #mdup.kill(dvr, disp) #try to started services
         sys.exit(0)
     else:
         f = open('isp.log', mode='a')
         f.write(comb)
         f.close()
         print('DONE processing the whole thing.')
-        #localf.kill(dvr, disp) #try to started services
+        #mdup.kill(dvr, disp) #try to started services
         sys.exit(0)
 else:
     f = open('isp.log', 'w')
@@ -45,5 +45,5 @@ else:
     f.write(comb)
     f.close()
     print('Creating new file since it does not exist. Next run you should get a prediction.')
-    #localf.kill(dvr, disp) #try to started services
+    #mdup.kill(dvr, disp) #try to started services
     sys.exit(0)

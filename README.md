@@ -1,4 +1,4 @@
-Mediacom email quota via SMS
+Mediacom Data Usage Prediction (mdup) via SMS
 ----------------------------
 
 This project is towards being able to receive via SMS your projected Mediacom internet usage and cost by leveraging Linear Regression and your email account (in this case I use gmail).
@@ -7,12 +7,19 @@ In order for this to work you will need to download the packages below.  Special
 
 This project has been tested on macOS and Ubuntu (server on docker).
 
+## Accuracy
+
+How accurate is it?  Well, nothing is really 100% accurate and I think it will depend on the methodology that you follow on how often you gather the data and the disclaimer from Mediacom "that recent usage may not be included in this amount due to routine or other delays in data usage aggregation and reporting."  All of these variables will cause an effect on the prediction, but hey, is a lot better than not knowing how  much data you will use by end of month.
+
+In my case, I had an average of **98.5%** of accuracy on my predictions, where some times it went over and other times under the predicted vs the usage.
+
 ## Running the code in prod
 
 ### Prerequisites
+
 To execute this program properly, you will need to have the following program installed on your environment.
 
--   python 3.5
+-   python 3.5 (I assume it will work on python 2.7 as well)
 -   Chrome 56
 -   Xvfb
 
@@ -47,14 +54,15 @@ To automate delivery of the SMS, than you can setup a crontab and send it every 
 
 ```
 crontab -e
-* */6 * * * python /path/to/project/email2sms/main.py chromedriver_linux64 5557779999@vtext.com > /dev/null 2>&1 #gather and email mediacom quota via sms
+* */6 * * * python /path/to/project/mdup/main.py chromedriver_linux64 5557779999@vtext.com > /dev/null 2>&1 #gather and email mediacom quota
 ```
 
 ### Using docker
-If you are using docker, then you can do the following.  This will run, mount, and delete the docker container once done running.
+
+If you are using docker, then you can do the following.  This will run, mount, and delete the docker container once done running.  You will need to change `/path/to/project/mdup` to your local computer path.
 
 ``` bash
-docker run --rm -d -P -v /path/to/project/email2sms:/src/email2sms blacknred0/mediacomsmsquota 5557779999@vtext.com
+docker run --rm -d -P -v /path/to/project/mdup:/src/mdup blacknred0/mdup 5557779999@vtext.com
 ```
 
 ## Dev - Install packages & config env
@@ -106,7 +114,7 @@ apt install -f -y #might be needed due to missing dependencies, then we will for
 dpkg -i google-chrome*.deb
 ln /usr/bin/python3.5 /usr/bin/python
 wget https://bootstrap.pypa.io/get-pip.py
-get.pip.py
+get-pip.py
 pip install numpy scipy matplotlib sympy nose pandas sklearn selenium pyvirtualdisplay
 rm google-chrome*.deb get.pip.py
 exit
@@ -115,26 +123,26 @@ exit
 Now, that you have your image ready, let's commit.  Make sure that you replace "5d2c74af649f" with your docker image id.
 
 ```
-docker commit -m "Configure the whole environment to run" -a "First Last Names" 5d2c74af649f blacknred0/mediacomsmsquota
+docker commit -m "Configure the whole environment to run" -a "First Last Names" 5d2c74af649f blacknred0/mdup
 ```
 
 ##### Building docker image
 All files and programs are ready for prime time.  Make sure that you are on the main path location of the project and run the following to build your docker image.
 
 ```
-docker build --rm -t blacknred0/mediacomsmsquota .
+docker build --rm -t blacknred0/mdup .
 ```
 
 This will run, mount, and delete the docker container once done running.
 
 ``` bash
-docker run --rm -d -P --volume /path/to/project/email2sms:/src/email2sms blacknred0/mediacomsmsquota 5557779999@vtext.com
+docker run --rm -d -P --volume /path/to/project/mdup:/src/mdup blacknred0/mdup 5557779999@vtext.com
 ```
 
 To view the image with removing the docker container once you are done.
 
 ```
-docker run --rm -it --entrypoint /bin/bash --volume /path/to/project/email2sms:/src/email2sms blacknred0/mediacomsmsquota
+docker run --rm -it --entrypoint /bin/bash --volume /path/to/project/mdup:/src/mdup blacknred0/mdup
 ```
 
 ## Some sources/resources

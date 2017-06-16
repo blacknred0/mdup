@@ -6,7 +6,7 @@ Created on Feb 28, 2017
 @summary: Collect and send via SMS your current month data usage.
 '''
 
-import os, datetime, sys, localf
+import os, datetime, sys, mdup
 import numpy as np
 import pandas as pd
 from sklearn.linear_model import LinearRegression
@@ -16,7 +16,7 @@ prog_path = os.path.dirname(os.path.realpath(sys.argv[0])) #get python file path
 os.chdir(prog_path) #change working directory
 conf = pd.read_table('conf', sep='=', header=None) #store config file
 
-used, left, daysleft, dataused, datesnap = localf.get_data(prog_path, conf)
+used, left, daysleft, dataused, datesnap = mdup.get_data(prog_path, conf)
 comb = used + ',' + left + ',' + daysleft + ',' + dataused + ',' + datesnap + '\n'
 
 fp = Path('isp.log')
@@ -33,7 +33,7 @@ if fp.is_file():
     if last_dt_datesnap >= dt_datesnap:
         print('No need to dump new data since latest version exist on the log file.',
               '\nWill still continue and run prediction.')
-        #localf.kill(dvr, disp) #try to started services
+        #mdup.kill(dvr, disp) #try to started services
         ###############################################################################
         #    Gather date information to align with reporting month
         ###############################################################################
@@ -45,7 +45,7 @@ if fp.is_file():
         else:
             #source http://stackoverflow.com/questions/36155332/how-to-get-the-first-day-and-last-day-of-current-month-in-python
             startdate = str(datetime.date(today.year, today.month - 1, 11)) #return 11th of the previous month
-        enddate = localf.add_months(datetime.datetime(*[int(item) for item in startdate.split('-')]), 1).strftime("%Y-%m-%d")
+        enddate = mdup.add_months(datetime.datetime(*[int(item) for item in startdate.split('-')]), 1).strftime("%Y-%m-%d")
         ###############################################################################
         #    Build prediction model using linear regression
         ###############################################################################
@@ -58,8 +58,9 @@ if fp.is_file():
         model = LinearRegression()
         model.fit(X, y)
         # create and sort descending order for days left
-        # then predict data usage based on days left on the month
-        X_predict = np.arange(np.min(X)); X_predict = X_predict[::-1]
+        # then predict data usage based on days left on the month by excluding
+        # day zero from the selection
+        X_predict = np.arange(np.min(X)); X_predict = X_predict[:0:-1]
         X_predict = X_predict[:, np.newaxis] #transpose
         y_predict = model.predict(X_predict) #predict data usage
         #fc = np.concatenate((X_predict, y_predict), axis=1) #forecast
@@ -68,7 +69,7 @@ if fp.is_file():
                     'your current ' + dataused + 'GB and projected ' +
                     str(np.max(np.round(y_predict, decimals=1))) + 'GB data usage.')
         b_msg = str(' That is ~' + str(np.round(np.max(y_predict)-400, decimals=0).astype(int)) +
-                    'GB or ~$' + str(localf.round10(((np.max(y_predict)-400)/50) * 10)) +
+                    'GB or ~$' + str(mdup.round10(((np.max(y_predict)-400)/50) * 10)) +
                     ' over.')
         # if over usage data prediction is less than zero,
         # don't append prediction over usage
@@ -81,8 +82,8 @@ if fp.is_file():
         username = conf.iloc[2][1]
         password = conf.iloc[3][1]
         to = sys.argv[1].split(sep=',')
-        localf.email_msg(username, password, to, dta_msg)
-        #localf.kill(dvr, disp) #try to started services
+        mdup.email_msg(username, password, to, dta_msg)
+        #mdup.kill(dvr, disp) #try to started services
         print('DONE processing the whole thing.')
         sys.exit(0)
     else:
@@ -100,7 +101,7 @@ if fp.is_file():
         else:
             #source http://stackoverflow.com/questions/36155332/how-to-get-the-first-day-and-last-day-of-current-month-in-python
             startdate = str(datetime.date(today.year, today.month - 1, 11)) #return 11th of the previous month
-        enddate = localf.add_months(datetime.datetime(*[int(item) for item in startdate.split('-')]), 1).strftime("%Y-%m-%d")
+        enddate = mdup.add_months(datetime.datetime(*[int(item) for item in startdate.split('-')]), 1).strftime("%Y-%m-%d")
         ###############################################################################
         #    Build prediction model using linear regression
         ###############################################################################
@@ -123,7 +124,7 @@ if fp.is_file():
                     'your current ' + dataused + 'GB and projected ' +
                     str(np.max(np.round(y_predict, decimals=1))) + 'GB data usage.')
         b_msg = str(' That is ~' + str(np.round(np.max(y_predict)-400, decimals=0).astype(int)) +
-                    'GB or ~$' + str(localf.round10(((np.max(y_predict)-400)/50) * 10)) +
+                    'GB or ~$' + str(mdup.round10(((np.max(y_predict)-400)/50) * 10)) +
                     ' over.')
         # if over usage data prediction is less than zero,
         # don't append prediction over usage
@@ -136,8 +137,8 @@ if fp.is_file():
         username = conf.iloc[2][1]
         password = conf.iloc[3][1]
         to = sys.argv[1].split(sep=',')
-        localf.email_msg(username, password, to, dta_msg)
-        #localf.kill(dvr, disp) #try to started services
+        mdup.email_msg(username, password, to, dta_msg)
+        #mdup.kill(dvr, disp) #try to started services
         print('DONE processing the whole thing.')
         sys.exit(0)
 else:
@@ -146,5 +147,5 @@ else:
     f.write(comb)
     f.close()
     print('Creating new file since it does not exist. Next run you should get a prediction.')
-    #localf.kill(dvr, disp) #try to started services
+    #mdup.kill(dvr, disp) #try to started services
     sys.exit(0)

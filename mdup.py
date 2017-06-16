@@ -49,7 +49,7 @@ def cln_structure(txt):
     used = re.search(r'(\d% used)|(\d\d% used)|(\d\d\d% used)', txt).group(0) #pct. used
     left = re.search(r'(\d% left)|(\d\d% left)|(\d\d\d% left)', txt).group(0) #pct. left
     daysleft = re.search(r'(with \d days remaining this month)|(with \d\d days remaining this month)', txt).group(0) #days left in the month
-    dataused = re.search(r'(\d.\d GB of 400 GB used)|(\d\d.\d GB of 400 GB used)|(\d\d\d.\d GB of 400 GB used)|(\d\d GB of 400 GB used)|(\d\d\d GB of 400 GB used)', txt).group(0) #data used
+    dataused = re.search(r'(\d GB of 400 GB used)|(\d.\d GB of 400 GB used)|(\d\d.\d GB of 400 GB used)|(\d\d\d.\d GB of 400 GB used)|(\d\d GB of 400 GB used)|(\d\d\d GB of 400 GB used)', txt).group(0) #data used
     datesnap = re.search(r'(Data usage above as measured by Mediacom as of \d/\d\d/\d\d\d\d \d\d:\d\d)|(Data usage above as measured by Mediacom as of \d\d/\d\d/\d\d\d\d \d\d:\d\d)|(Data usage above as measured by Mediacom as of \d/\d/\d\d\d\d \d\d:\d\d)', txt).group(0) #data snapshot
     used = re.sub(r'[^0-9]', '', used)
     left = re.sub(r'[^0-9]', '', left)

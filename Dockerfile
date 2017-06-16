@@ -1,13 +1,13 @@
-FROM blacknred0/mediacomsmsquota
+FROM blacknred0/mdup
 
 MAINTAINER Irving Duran <irving.duran@gmail.com>
 
-RUN apt update && apt upgrade -y
-RUN mkdir -p /src/email2sms
-#COPY main.py main_gather.py localf.py chromedriver_linux64 /src/email2sms/
+RUN apt update && apt upgrade -y && apt -y autoremove
+RUN mkdir -p /src/mdup
+#COPY main.py main_gather.py localf.py chromedriver_linux64 /src/mdup/
 ENTRYPOINT ["python"]
-#CMD ["python", "/src/email2sms/main.py", "chromedriver_linux64"]
-VOLUME ["/src/email2sms"]
+#CMD ["python", "/src/mdup/main.py", "chromedriver_linux64"]
+VOLUME ["/src/mdup"]
 
 #fix chrome issues with xvfb source -> https://github.com/kfatehi/docker-chrome-xvfb/blob/master/Dockerfile
 ENV DISPLAY :99
