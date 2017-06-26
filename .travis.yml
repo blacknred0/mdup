@@ -1,0 +1,16 @@
+sudo: required
+
+language: python
+python:
+  - "3.5"
+
+services:
+  - docker
+
+before_install:
+  - docker build -t blacknred0/mdup .
+  - docker run blacknred0/mdup --version
+  - docker images
+
+script:
+  - echo "TODO"

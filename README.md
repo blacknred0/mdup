@@ -1,6 +1,10 @@
 Mediacom Data Usage Prediction (mdup) via SMS
 ----------------------------
 
+[![Build Status](https://travis-ci.org/blacknred0/mdup.svg?branch=master)](https://travis-ci.org/blacknred0/mdup)
+
+----------------------------
+
 This project is towards being able to receive via SMS your projected Mediacom internet usage and cost by leveraging Linear Regression and your email account (in this case I use gmail).
 
 In order for this to work you will need to download the packages below.  Specially for Selenium to work, you will need Chrome to be installed.  That way the display could project properly.
@@ -19,8 +23,8 @@ In my case, I had an average of **98.5%** of accuracy on my predictions, where s
 
 To execute this program properly, you will need to have the following program installed on your environment.
 
--   python 3.5 (I assume it will work on python 2.7 as well)
--   Chrome 56
+-   python >= 3.5 (I assume it will work on python 2.7 as well)
+-   Chrome >= 56
 -   Xvfb
 
 Tested on macOS and Ubuntu.
@@ -36,7 +40,18 @@ gmail_usr=YOUREMAIL@gmail.com
 gmail_pwd=YOUR_GMAIL_PASSWORD' > conf
 ```
 
-To run the main code you will need to make sure that you have your dev environment configured or do a docker image.
+To run the main code you will need to make sure that you have your dev environment configured or build the docker image.  The easier way is to build the docker image (note, this might take a while due to the packages to download and configure).
+
+### Using docker
+
+If you are using docker, then you can do the following.  This will build, run, mount, and delete the docker container once done running.  You will need to change `/path/to/project/mdup` to your local computer path.
+
+``` bash
+docker build -t blacknred0/mdup .
+docker run --rm -d -P -v /path/to/project/mdup:/src/mdup blacknred0/mdup 5557779999@vtext.com
+```
+
+### Not using docker built
 
 If you are using your host (not docker), then you can do the following
 
@@ -50,19 +65,11 @@ Sending to more than one address.
 python main.py chromedriver_mac 5557779999@vtext.com,2224446666@vtext.com
 ```
 
-To automate delivery of the SMS, than you can setup a crontab and send it every so often.  In this case, it will run every 6 hours.
+To automate delivery of the SMS, than you can setup a crontab and send it every so often.  In this case, it will run every 3 hours.
 
 ```
 crontab -e
-* */6 * * * python /path/to/project/mdup/main.py chromedriver_linux64 5557779999@vtext.com > /dev/null 2>&1 #gather and email mediacom quota
-```
-
-### Using docker
-
-If you are using docker, then you can do the following.  This will run, mount, and delete the docker container once done running.  You will need to change `/path/to/project/mdup` to your local computer path.
-
-``` bash
-docker run --rm -d -P -v /path/to/project/mdup:/src/mdup blacknred0/mdup 5557779999@vtext.com
+* */3 * * * python /path/to/project/mdup/main.py chromedriver_linux64 5557779999@vtext.com > /dev/null 2>&1 #gather and email mediacom quota
 ```
 
 ## Dev - Install packages & config env
@@ -85,7 +92,6 @@ wget https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
 sudo dpkg -i google-chrome*.deb
 sudo apt install -f -y #due to missing dependencies, then we will force and install them
 sudo dpkg -i google-chrome*.deb
-
 sudo ln /usr/bin/python3.5 /usr/bin/python
 wget https://bootstrap.pypa.io/get-pip.py
 python get-pip.py
@@ -93,10 +99,11 @@ python get-pip.py
 
 Once you run `python get.pip.py`, then you can go to step 2 from above by setting up "Python environment".
 
-
 ### Docker way (using Ubuntu)
 #### Lazy
-TBF (To Be Fill)
+``` bash
+docker build -t blacknred0/mdup .
+```
 
 #### From scratch
 Download and configure your docker image.
@@ -114,7 +121,7 @@ apt install -f -y #might be needed due to missing dependencies, then we will for
 dpkg -i google-chrome*.deb
 ln /usr/bin/python3.5 /usr/bin/python
 wget https://bootstrap.pypa.io/get-pip.py
-get-pip.py
+python get-pip.py
 pip install numpy scipy matplotlib sympy nose pandas sklearn selenium pyvirtualdisplay
 rm google-chrome*.deb get.pip.py
 exit
