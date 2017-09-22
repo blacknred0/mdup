@@ -48,7 +48,12 @@ If you are using docker, then you can do the following. This will build, run, mo
 
 ```bash
 docker build -t blacknred0/mdup .
-docker run --rm -d -P -v /path/to/project/mdup:/src/mdup blacknred0/mdup 5557779999@vtext.com
+docker run --rm -d -P \
+  -v /path/to/project/mdup:/src/mdup \
+  blacknred0/mdup main_gather.py
+docker run --rm -d -P \
+  -v /path/to/project/mdup:/src/mdup \
+  blacknred0/mdup main.py 5557779999@vtext.com
 ```
 
 ## Not using docker built
@@ -69,7 +74,7 @@ To automate delivery of the SMS, than you can setup a crontab and send it every 
 
 ```
 crontab -e
-* */3 * * * python /path/to/project/mdup/main.py chromedriver_linux64 5557779999@vtext.com > /dev/null 2>&1 #gather and email mediacom quota
+0 */3 * * * python /path/to/project/mdup/main.py chromedriver_linux64 5557779999@vtext.com > /dev/null 2>&1 #gather and email mediacom quota
 ```
 
 # Dev - Install packages & config env

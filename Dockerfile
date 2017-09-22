@@ -18,6 +18,8 @@ RUN apt update && apt upgrade -y && apt -y autoremove && \
   pip install numpy scipy matplotlib sympy nose pandas sklearn selenium pyvirtualdisplay && \
   rm get-pip.py linux_signing_key.pub && \
   mkdir -p /src/mdup
+
+WORKDIR /src/mdup/
 ENTRYPOINT ["python"]
 VOLUME ["/src/mdup"]
 
