@@ -20,7 +20,7 @@ RUN apt update && apt upgrade -y && apt -y autoremove && \
   mkdir -p /src/mdup
 
 WORKDIR /src/mdup/
-ENTRYPOINT ["python"]
+ENTRYPOINT ["python", "app.py"]
 VOLUME ["/src/mdup"]
 
 #fix chrome issues with xvfb source -> https://github.com/kfatehi/docker-chrome-xvfb/blob/master/Dockerfile

@@ -9,7 +9,6 @@ services:
 
 before_install:
   - docker build -t blacknred0/mdup .
-  - docker run blacknred0/mdup --version
   - docker images
 
 script:

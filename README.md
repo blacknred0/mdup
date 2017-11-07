@@ -44,16 +44,16 @@ To run the main code you will need to make sure that you have your dev environme
 
 ## Using docker
 
-If you are using docker, then you can do the following. This will build, run, mount, and delete the docker container once done running. You will need to change `/path/to/project/mdup` to your local computer path.
+If you are using docker, then you can do the following. This will build, run, mount, and delete the docker container once done running. You can change `$(pwd)` to an absolute path -> `/path/to/project/mdup` to your local computer/host.
 
 ```bash
 docker build -t blacknred0/mdup .
 docker run --rm -d -P \
-  -v /path/to/project/mdup:/src/mdup \
-  blacknred0/mdup main_gather.py
+  -v $(pwd):/src/mdup \
+  blacknred0/mdup -g #just gather some data
 docker run --rm -d -P \
-  -v /path/to/project/mdup:/src/mdup \
-  blacknred0/mdup main.py 5557779999@vtext.com
+  -v $(pwd):/src/mdup \
+  blacknred0/mdup -p 5557779999@vtext.com #predict
 ```
 
 ## Not using docker built
@@ -61,20 +61,21 @@ docker run --rm -d -P \
 If you are using your host (not docker), then you can do the following
 
 ```python
-python main.py chromedriver_mac 5557779999@vtext.com
+python app.py -g 5557779999@vtext.com
 ```
 
 Sending to more than one address.
 
 ```python
-python main.py chromedriver_mac 5557779999@vtext.com,2224446666@vtext.com
+python app.py -g 5557779999@vtext.com,2224446666@vtext.com
 ```
 
-To automate delivery of the SMS, than you can setup a crontab and send it every so often. In this case, it will run every 3 hours.
+To automate delivery of the SMS, than you can setup a crontab and send it every so often. In this case, it will run every 3 hours to gather data.
 
 ```
 crontab -e
-0 */3 * * * python /path/to/project/mdup/main.py chromedriver_linux64 5557779999@vtext.com > /dev/null 2>&1 #gather and email mediacom quota
+0 */3 * * * python /path/to/project/mdup/app.py -g
+0 6,18 * * 2,4,6 python /path/to/project/mdup/app.py -p 5557779999@vtext.com > /dev/null 2>&1 #gather and email mediacom quota
 ```
 
 # Dev - Install packages & config env
@@ -148,7 +149,7 @@ docker commit -m "Configure the whole environment to run" -a "First Last Names" 
 All files and programs are ready for prime time. Make sure that you are on the main path location of the project and run the following to build your docker image.
 
 ```
-docker build --rm -t blacknred0/mdup .
+docker build -t blacknred0/mdup .
 ```
 
 This will run, mount, and delete the docker container once done running.

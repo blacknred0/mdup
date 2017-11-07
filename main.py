@@ -6,7 +6,12 @@ Created on Feb 28, 2017
 @summary: Collect and send via SMS your current month data usage.
 '''
 
-import os, datetime, sys, mdup
+# TODO: Rewrite to accept one high-level argument (instead of two separate)
+#       python scripts to be used an an input in crontab
+import os
+import datetime
+import sys
+import mdup
 import numpy as np
 import pandas as pd
 from sklearn.linear_model import LinearRegression
@@ -16,7 +21,8 @@ prog_path = os.path.dirname(os.path.realpath(sys.argv[0])) #get python file path
 os.chdir(prog_path) #change working directory
 conf = pd.read_table('conf', sep='=', header=None) #store config file
 
-used, left, daysleft, dataused, datesnap = mdup.get_data(prog_path, conf)
+# TODO: Better way to extract results and storing it
+used, left, daysleft, dataused, datesnap, startday, datacap = mdup.get_data(prog_path, conf)
 comb = used + ',' + left + ',' + daysleft + ',' + dataused + ',' + datesnap + '\n'
 
 fp = Path('isp.log')
@@ -39,12 +45,12 @@ if fp.is_file():
         ###############################################################################
         today = datetime.date.today() #return today's date as a string
         #source http://stackoverflow.com/questions/37396329/finding-first-day-of-the-month-in-python
-        if today.day > 11:
+        if today.day > startday:
             today += datetime.timedelta(1)
-            startdate = str(today.replace(day=11)) #return 11th of the previous month
+            startdate = str(today.replace(day=startday)) #return XXth of the previous month
         else:
             #source http://stackoverflow.com/questions/36155332/how-to-get-the-first-day-and-last-day-of-current-month-in-python
-            startdate = str(datetime.date(today.year, today.month - 1, 11)) #return 11th of the previous month
+            startdate = str(datetime.date(today.year, today.month - 1, startday)) #return XXth of the previous month
         enddate = mdup.add_months(datetime.datetime(*[int(item) for item in startdate.split('-')]), 1).strftime("%Y-%m-%d")
         ###############################################################################
         #    Build prediction model using linear regression
@@ -68,20 +74,20 @@ if fp.is_file():
         f_msg = str('\n[Mediacom] With ' + str(np.min(X)) + ' days left, ' +
                     'your current ' + dataused + 'GB and projected ' +
                     str(np.max(np.round(y_predict, decimals=1))) + 'GB data usage.')
-        b_msg = str(' That is ~' + str(np.round(np.max(y_predict)-400, decimals=0).astype(int)) +
-                    'GB or ~$' + str(mdup.round10(((np.max(y_predict)-400)/50) * 10)) +
+        b_msg = str(' That is ~' + str(np.round(np.max(y_predict)-datacap, decimals=0).astype(int)) +
+                    'GB or ~$' + str(mdup.round10(((np.max(y_predict)-datacap)/50) * 10)) +
                     ' over.')
         # if over usage data prediction is less than zero,
         # don't append prediction over usage
         dta_msg = str(f_msg +
-                      '' if np.round(np.max(y_predict)-400, decimals=0).astype(int) < 0
+                      '' if np.round(np.max(y_predict)-datacap, decimals=0).astype(int) < 0
                       else f_msg + b_msg)
         ###############################################################################
         #    Email the prediction results
         ###############################################################################
         username = conf.iloc[2][1]
         password = conf.iloc[3][1]
-        to = sys.argv[1].split(sep=',')
+        to = sys.argv[2].split(sep=',')
         mdup.email_msg(username, password, to, dta_msg)
         #mdup.kill(dvr, disp) #try to started services
         print('DONE processing the whole thing.')
@@ -93,14 +99,14 @@ if fp.is_file():
         ###############################################################################
         #    Gather date information to align with reporting month
         ###############################################################################
-        today = datetime.date.today() #return today's date as a string
+        today = datetime.date.today()  # return today's date as a string
         #source http://stackoverflow.com/questions/37396329/finding-first-day-of-the-month-in-python
-        if today.day > 11:
+        if today.day > startday:
             today += datetime.timedelta(1)
-            startdate = str(today.replace(day=11)) #return 11th of the previous month
+            startdate = str(today.replace(day=startday)) #return XXth of the previous month
         else:
             #source http://stackoverflow.com/questions/36155332/how-to-get-the-first-day-and-last-day-of-current-month-in-python
-            startdate = str(datetime.date(today.year, today.month - 1, 11)) #return 11th of the previous month
+            startdate = str(datetime.date(today.year, today.month - 1, startday)) #return XXth of the previous month
         enddate = mdup.add_months(datetime.datetime(*[int(item) for item in startdate.split('-')]), 1).strftime("%Y-%m-%d")
         ###############################################################################
         #    Build prediction model using linear regression
@@ -123,20 +129,20 @@ if fp.is_file():
         f_msg = str('\n[Mediacom] With ' + str(np.min(X)) + ' days left, ' +
                     'your current ' + dataused + 'GB and projected ' +
                     str(np.max(np.round(y_predict, decimals=1))) + 'GB data usage.')
-        b_msg = str(' That is ~' + str(np.round(np.max(y_predict)-400, decimals=0).astype(int)) +
-                    'GB or ~$' + str(mdup.round10(((np.max(y_predict)-400)/50) * 10)) +
+        b_msg = str(' That is ~' + str(np.round(np.max(y_predict)-datacap, decimals=0).astype(int)) +
+                    'GB or ~$' + str(mdup.round10(((np.max(y_predict)-datacap)/50) * 10)) +
                     ' over.')
         # if over usage data prediction is less than zero,
         # don't append prediction over usage
         dta_msg = str(f_msg +
-                      '' if np.round(np.max(y_predict)-400, decimals=0).astype(int) < 0
+                      '' if np.round(np.max(y_predict)-datacap, decimals=0).astype(int) < 0
                       else f_msg + b_msg)
         ###############################################################################
         #    Email the prediction results
         ###############################################################################
         username = conf.iloc[2][1]
         password = conf.iloc[3][1]
-        to = sys.argv[1].split(sep=',')
+        to = sys.argv[2].split(sep=',')
         mdup.email_msg(username, password, to, dta_msg)
         #mdup.kill(dvr, disp) #try to started services
         print('DONE processing the whole thing.')

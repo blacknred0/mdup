@@ -1,6 +1,4 @@
-"""
-Main function of  data gathering, cleanup and processing.
-"""
+"""Main function of  data gathering, cleanup and processing."""
 
 import os
 import platform
@@ -15,6 +13,7 @@ from selenium import webdriver
 from pyvirtualdisplay import Display
 
 def get_data(proj_dir, conf):
+
     """
     Data gathering by activating Selenium with chromedriver.  This function also
     grabs configuration file from host along with executing whether is on
@@ -36,17 +35,17 @@ def get_data(proj_dir, conf):
     elif sys.platform.startswith('linux'):
         chromedvr = proj_dir + '/chromedriver_linux64'
         display = ''
-        if ('DISPLAY' in os.environ) == False | ('moby' in str(platform.uname())) == True:
+        # check that is running on docker image
+        os.environ['PWD'] = '/src/mdup'
+        if 'DISPLAY' in os.environ and os.environ['PWD'] == '/src/mdup':
             display = Display(visible=0, size=(1024, 768))
-            display.start() #create virtual display
-            os.environ["webdriver.chrome.driver"] = chromedvr
-        elif ('DISPLAY' in os.environ) == False | ('moby' in str(platform.uname())) == False:
-            display = Display(visible=0, size=(1024, 768))
-            display.start() #create virtual display
+            display.start()  # create virtual display
             os.environ["webdriver.chrome.driver"] = chromedvr
         else:
-            print('Need to install Xvfb or something is wrong with the docker image.',
-                  '\nIn Ubuntu you can do -> `apt -y install xvfb`\n')
+            print('Need to install Xvfb or something is wrong with the',
+                  'docker image. \nIn Ubuntu you can do ->',
+                  '`apt -y install xvfb` to successfully create virtual\n',
+                  'display for selenium.\n')
     else:
         sys.exit('OS Not supported or recognized')
     print('Starting driver to gather data...')
@@ -57,14 +56,14 @@ def get_data(proj_dir, conf):
     search_box = driver.find_element_by_name('pf.pass')
     search_box.send_keys(conf.iloc[1][1])
     search_box.submit()
-    time.sleep(5) # wait
-    #cookie = driver.get_cookies()
+    time.sleep(5)  # wait
+    # cookie = driver.get_cookies()
     driver.get('http://www.mediacomtoday.com/usagemeter/usagemeter.php')
     html = driver.page_source
-    try: # clean up data, if fails, quit
+    try:  # clean up data, if fails, quit
         print('Cleaning up data...')
-        used, left, daysleft, dataused, datesnap = cln_structure(html)
-        return(used, left, daysleft, dataused, datesnap)
+        used, left, daysleft, dataused, datesnap, startday, datacap = cln_structure(html)
+        return(used, left, daysleft, dataused, datesnap, startday, datacap)
     finally:
         kill(driver, display) #kill started services
 
@@ -85,14 +84,18 @@ def cln_structure(txt):
     datesnap = re.search(r'(Data usage above as measured by Mediacom as of ' +
                          r'\d+(?:\d+)?/\d+(?:\d+)?/\d\d\d\d \d\d:\d\d)',
                          txt).group(0) #data snapshot
+    startday = re.search(r'(<tspan x="100">[a-zA-Z]{3} \d, \d{4} -)|(<tspan x="100">[a-zA-Z]{3} \d{2}, \d{4} -)', txt).group(0) #start day of plan
+    datacap = re.search(r'(\d+(?:\.\d+)? GB monthly usage allowance)', txt).group(0) #data cap
     used = re.sub(r'[^0-9]', '', used)
     left = re.sub(r'[^0-9]', '', left)
     daysleft = re.sub(r'[^0-9]', '', daysleft)
     dataused = re.sub(r'( GB of \d+(?:\d+) GB used)', '', dataused)
     datesnap = re.sub(r'(Data usage above as measured by Mediacom as of )',
                       '', datesnap)
+    startday = int(re.sub(r'(<.*[a-zA-z] )|(,.*)', '', startday))
+    datacap = int(re.sub(r'[^0-9]', '', datacap))
 
-    return(used, left, daysleft, dataused, datesnap)
+    return(used, left, daysleft, dataused, datesnap, startday, datacap)
 
 def kill(driver, display):
     """
