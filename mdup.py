@@ -42,10 +42,16 @@ def get_data(proj_dir, conf):
             display.start()  # create virtual display
             os.environ["webdriver.chrome.driver"] = chromedvr
         else:
-            print('Need to install Xvfb or something is wrong with the',
-                  'docker image. \nIn Ubuntu you can do ->',
-                  '`apt -y install xvfb` to successfully create virtual\n',
-                  'display for selenium.\n')
+            try:
+                os.environ['DISPLAY'] = ':99'
+                display = Display(visible=0, size=(1024, 768))
+                display.start()  # create virtual display
+                os.environ["webdriver.chrome.driver"] = chromedvr
+            except Exception as e:
+                print('Need to install Xvfb or something is wrong with the',
+                      'docker image. \nIn Ubuntu you can do ->',
+                      '`apt -y install xvfb` to successfully create virtual\n',
+                      'display for selenium.\n')
     else:
         sys.exit('OS Not supported or recognized')
     print('Starting driver to gather data...')
